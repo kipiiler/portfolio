@@ -2,8 +2,7 @@ import { groq } from "next-sanity";
 import client from "./sanity.client";
 
 export async function getProfile() {
-  return client.fetch(
-    groq`*[_type == "profile"]{
+  const query = groq`*[_type == "profile"]{
       _id,
       fullName,
       headline,
@@ -15,13 +14,12 @@ export async function getProfile() {
       "resumeURL": resumeURL.asset->url,
       socialLinks,
       skills
-    }`
-  );
+    }`;
+  return await client.fetch(query);
 }
 
 export async function getJob() {
-  return client.fetch(
-    groq`*[_type == "job"]{
+  const query = groq`*[_type == "job"]{
       _id,
       name,
       jobTitle,
@@ -30,20 +28,19 @@ export async function getJob() {
       description,
       startDate,
       endDate,
-    }`
-  );
+    }`;
+  return await client.fetch(query);
 }
 
 export async function getProjects() {
-  return client.fetch(
-    groq`*[_type == "project"]{
+  const query = groq`*[_type == "project"]{
       _id, 
       name,
       "slug": slug.current,
       tagline,
       "logo": logo.asset->url,
-    }`
-  );
+    }`;
+  return await client.fetch(query);
 }
 
 export async function getSingleProject(slug: string) {
