@@ -1,6 +1,14 @@
 import { groq } from "next-sanity";
 import client from "./sanity.client";
 
+export async function getResume() {
+  const query = groq`*[_type == "profile"]{
+        _id,
+        "resumeURL": resumeURL.asset->url,
+        }`;
+  return await client.fetch(query);
+}
+
 export async function getProfile() {
   const query = groq`*[_type == "profile"]{
       _id,

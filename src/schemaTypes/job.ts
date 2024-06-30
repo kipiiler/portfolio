@@ -31,6 +31,13 @@ const job = {
       type: "url",
     },
     {
+      name: "company_description",
+      title: "Company Description",
+      type: "text",
+      rows: 3,
+      description: "Write a brief description about the company",
+    },
+    {
       name: "description",
       title: "Job Description",
       type: "text",

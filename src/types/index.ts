@@ -1,5 +1,10 @@
 import { PortableTextBlock } from "sanity";
 
+export type ProfileResumeType = {
+  _id: string;
+  resumeURL: string;
+};
+
 export type ProfileType = {
   _id: string;
   fullName: string;

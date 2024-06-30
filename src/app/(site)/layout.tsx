@@ -9,10 +9,10 @@ import Footer from "./components/layout/Footer";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Sanity Next.js Portfolio Site",
+  title: "Portfolio | kipiiler",
   description: "A personal portfolio site built with Sanity and Next.js",
   openGraph: {
-    images: "add-your-open-graph-image-url-here",
+    images: "https://static.thenounproject.com/png/707608-200.png",
   },
 };
 

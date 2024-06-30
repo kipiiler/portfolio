@@ -6,8 +6,30 @@ import type { ProfileType } from "@/types";
 import { PortableText } from "@portabletext/react";
 import { BiEnvelope, BiFile } from "react-icons/bi";
 
+const CustomLink = ({ children, value }: any) => {
+  const { href } = value;
+  return (
+    <a
+      className="font-semibold underline"
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      {children}
+    </a>
+  );
+};
+
 export default async function About() {
   const profile: ProfileType[] = await getProfile();
+
+  const components = {
+    marks: {
+      link: ({ children, value }: any) => {
+        return <CustomLink value={value}>{children}</CustomLink>;
+      },
+    },
+  };
 
   return (
     <main className="lg:max-w-7xl mx-auto max-w-3xl md:px-16 px-6">
@@ -17,12 +39,11 @@ export default async function About() {
             <section className="grid lg:grid-cols-2 grid-cols-1 gap-x-6 justify-items-center">
               <div className="order-2 lg:order-none">
                 <h1 className="lg:text-5xl text-4xl lg:leading-tight basis-1/2 font-bold mb-8">
-                  I&apos;m {data.fullName}. I live in {data.location}, where I
-                  design the future.
+                  Hi, I&apos;m {data.fullName} based in {data.location}.
                 </h1>
 
                 <div className="flex flex-col gap-y-3 text-zinc-400 leading-relaxed">
-                  <PortableText value={data.fullBio} />
+                  <PortableText components={components} value={data.fullBio} />
                 </div>
               </div>
 
@@ -82,3 +103,5 @@ export default async function About() {
     </main>
   );
 }
+
+export const revalidate = 1;
