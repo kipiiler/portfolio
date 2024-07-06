@@ -93,7 +93,10 @@ export default function Job() {
                     <p>{data.jobTitle}</p>
                   </a>
                   <small className="text-sm text-zinc-500 mt-2 tracking-widest uppercase">
-                    {data.startDate.toString()} - {data.endDate.toString()}
+                    {data.startDate.toString()} -{" "}
+                    {new Date(data.endDate).getTime() > Date.now()
+                      ? "Present"
+                      : data.endDate.toString()}
                   </small>
                   <p className="text-base text-zinc-400 mt-4 mb-2">
                     {data.company_description}

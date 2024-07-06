@@ -56,9 +56,8 @@ const project = {
     {
       name: "description",
       title: "Description",
-      type: "array",
       description: "Write a full description about this project",
-      of: [{ type: "block" }],
+      type: "blockContent",
     },
   ],
 };
