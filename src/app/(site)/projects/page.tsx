@@ -8,16 +8,31 @@ export default async function Project() {
 
   return (
     <main className="max-w-7xl mx-auto md:px-16 px-6">
-      <section className="max-w-2xl mb-16">
+      <section className="max-w-7xl mb-16">
         <h1 className="text-3xl font-bold tracking-tight sm:text-5xl mb-6 lg:leading-[3.7rem] leading-tight">
-          Featured projects I&apos;ve built over the years
+          Featured cool stuff I&apos;ve made 🚀
         </h1>
         <p className="text-base text-zinc-400 leading-relaxed">
-          I&apos;ve worked on tons of little projects over the years but these
-          are the ones that I&apos;m most proud of. Many of them are
-          open-source, so if you see something that piques your interest, check
-          out the code and contribute if you have ideas for how it can be
-          improved.
+          Welcome to my projects page. This is where I showcase the cool stuff
+          I&apos;ve been working on. Each project here has a story - late
+          nights, wild ideas, and probably too much coffee. Take a look around,
+          and if something catches your eye, let me know. I&apos;m always happy
+          to geek out about my work!
+        </p>
+
+        <p className="text-base text-zinc-400 leading-relaxed mt-4">
+          Some of mine projects are open for everyone to see, while others are
+          tucked away in private repos (gotta keep a few secrets, right?). If
+          you&apos;re a interested in those private ones to get a better sense
+          of my craft, I&apos;d love to chat more. Don&apos;t hesitate to reach
+          out to me at{" "}
+          <a
+            href={"mailto:hoangng@cs.washington.edu"}
+            className="underline hover:text-orange-500"
+          >
+            hoangng@cs.washington.edu
+          </a>
+          .
         </p>
       </section>
 

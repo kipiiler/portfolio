@@ -70,7 +70,7 @@ export default async function About() {
                   <li>
                     <a
                       href={`mailto:${data.email}`}
-                      className="flex items-center gap-x-2 hover:text-purple-400 duration-300"
+                      className="flex items-center gap-x-2 hover:text-orange-400 duration-300"
                     >
                       <BiEnvelope className="text-lg" />
                       {data.email}
@@ -80,7 +80,7 @@ export default async function About() {
               </div>
             </section>
 
-            <section className="mt-24 max-w-2xl">
+            <section className="mt-24 max-w-5xl">
               <h2 className="font-semibold text-4xl mb-4">Expertise</h2>
               <p className="text-zinc-400 max-w-lg">
                 Over the years, I&apos;ve cultivated a diverse set of skills.

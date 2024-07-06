@@ -70,7 +70,10 @@ export default async function Home() {
               <p className="text-base text-zinc-400 leading-relaxed">
                 {data.shortBio}
               </p>
-              <ul className="flex items-center gap-x-6 my-10">
+              <p className="text-base text-zinc-400 leading-relaxed w-full mt-10">
+                Find me on:
+              </p>
+              <ul className="flex items-center gap-x-6">
                 {Object.entries(data.socialLinks)
                   .sort()
                   .map(([key, value], id) => (
@@ -78,13 +81,22 @@ export default async function Home() {
                       <a
                         href={value}
                         rel="noreferer noopener"
-                        className="flex items-center gap-x-3 mb-5 hover:text-purple-400 duration-300"
+                        className="flex items-center gap-x-3 mb-5 hover:text-orange-400 duration-300"
                       >
                         {key[0].toUpperCase() + key.toLowerCase().slice(1)}
                       </a>
                     </li>
                   ))}
               </ul>
+              <p className="text-base text-zinc-400 leading-relaxed w-full">
+                or reach me @{" "}
+                <a
+                  href={"mailto:" + data.email}
+                  className="underline hover:text-orange-500"
+                >
+                  {data.email}
+                </a>
+              </p>
             </div>
           ))}
         <div style={{ fontSize: 6, letterSpacing: "0.2em" }}>

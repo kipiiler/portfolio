@@ -20,7 +20,7 @@ export default async function Navbar() {
         <nav>
           <ul className="flex items-center gap-x-8">
             <li>
-              <Link href="/" className="hover:text-purple-400 duration-300">
+              <Link href="/" className="hover:text-orange-400 duration-300">
                 Home
               </Link>
             </li>
@@ -35,7 +35,7 @@ export default async function Navbar() {
             <li>
               <Link
                 href="/about"
-                className="hover:text-purple-400 duration-300"
+                className="hover:text-orange-400 duration-300"
               >
                 About
               </Link>
@@ -43,7 +43,7 @@ export default async function Navbar() {
             <li>
               <Link
                 href="/projects"
-                className="hover:text-purple-400 duration-300"
+                className="hover:text-orange-400 duration-300"
               >
                 Projects
               </Link>
@@ -52,7 +52,7 @@ export default async function Navbar() {
               {resumeObj && (
                 <Link
                   href={`${resumeObj[0].resumeURL}?dl=Hoang_Nguyen_resume.pdf`}
-                  className="hover:text-purple-400 duration-300 flex items-center justify-center gap-x-2 border border-transparent rounded-md duration-200 py-2 text-center font-medium"
+                  className="hover:text-orange-400 duration-300 flex items-center justify-center gap-x-2 border border-transparent rounded-md duration-200 py-2 text-center font-medium"
                 >
                   <FaDownload className="text-base" /> Resume
                 </Link>

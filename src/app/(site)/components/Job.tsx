@@ -18,7 +18,7 @@ function JobDetail({ data }: { data: JobType }) {
     <>
       <p
         onClick={handleClickReadMore}
-        className="text-base text-zinc-400 my-1 underline cursor-pointer hover:text-green-500 text-right w-full"
+        className="text-base text-zinc-400 my-1 underline cursor-pointer hover:text-orange-500 text-right w-full"
       >
         {!open ? "Read more technical details" : "Close"}
       </p>
