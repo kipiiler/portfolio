@@ -11,8 +11,15 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Portfolio | kipiiler",
   description: "A personal portfolio site built with Sanity and Next.js",
+  metadataBase: new URL("https://kipiiler.com"),
   openGraph: {
+    title: "Portfolio | kipiiler",
+    description: "A personal portfolio site built with Sanity and Next.js",
+    url: "https://kipiiler.com",
     images: "https://static.thenounproject.com/png/707608-200.png",
+    siteName: "kipiiler.com",
+    locale: "en-US",
+    type: "website",
   },
 };
 

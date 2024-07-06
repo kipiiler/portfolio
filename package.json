@@ -9,12 +9,15 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@sanity/code-input": "^4.1.4",
     "@sanity/vision": "^3.48.0",
     "next": "14.2.4",
     "next-sanity": "^9.4.2",
     "react": "^18",
     "react-dom": "^18",
     "react-icons": "^5.2.1",
+    "react-refractor": "^3.1.1",
+    "refractor": "^4.8.1",
     "sanity": "^3.48.0"
   },
   "devDependencies": {

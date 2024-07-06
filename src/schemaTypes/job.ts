@@ -54,6 +54,12 @@ const job = {
       title: "End Date",
       type: "date",
     },
+    {
+      name: "detail_description",
+      title: "Detail Description",
+      type: "blockContent",
+      description: "Write a detailed description about this role",
+    },
   ],
 };
 

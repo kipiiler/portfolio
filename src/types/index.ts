@@ -28,9 +28,11 @@ export type JobType = {
   jobTitle: string;
   logo: string;
   url: string;
+  company_description: string;
   description: string;
   startDate: Date;
   endDate: Date;
+  detail_description: PortableTextBlock[];
 };
 
 export type ProjectType = {

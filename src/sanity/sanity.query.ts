@@ -33,9 +33,11 @@ export async function getJob() {
       jobTitle,
       "logo": logo.asset->url,
       url,
+      company_description,
       description,
       startDate,
       endDate,
+      detail_description
     }`;
   return await client.fetch(query);
 }
