@@ -51,7 +51,7 @@ export default async function Navbar() {
             <li>
               {resumeObj && (
                 <Link
-                  href={`${resumeObj[0].resumeURL}?dl=Hoang_Nguyen_resume`}
+                  href={`${resumeObj[0].resumeURL}?dl=Hoang_Nguyen_resume.pdf`}
                   className="hover:text-purple-400 duration-300 flex items-center justify-center gap-x-2 border border-transparent rounded-md duration-200 py-2 text-center font-medium"
                 >
                   <FaDownload className="text-base" /> Resume
