@@ -60,3 +60,5 @@ export default async function Project() {
     </main>
   );
 }
+
+export const revalidate = 1;
