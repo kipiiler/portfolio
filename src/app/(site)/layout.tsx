@@ -6,6 +6,7 @@ import { Inter } from "next/font/google";
 import Navbar from "./components/layout/Header";
 import Footer from "./components/layout/Footer";
 import GoogleAnalytics from "./components/GoogleAnalytics";
+import { Analytics } from "@vercel/analytics/react";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -32,6 +33,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <GoogleAnalytics />
+      <Analytics />
       <body className={`${inter.className} bg-zinc-900 text-white`}>
         <Navbar />
         {children}
