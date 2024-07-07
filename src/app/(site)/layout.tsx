@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import Navbar from "./components/layout/Header";
 import Footer from "./components/layout/Footer";
+import GoogleAnalytics from "./components/GoogleAnalytics";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -30,6 +31,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <GoogleAnalytics />
       <body className={`${inter.className} bg-zinc-900 text-white`}>
         <Navbar />
         {children}
