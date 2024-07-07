@@ -36,7 +36,6 @@ function JobDetail({ data }: { data: JobType }) {
 
 export default function Job() {
   const [job, setJob] = useState<JobType[]>([]);
-  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     async function fetchJob() {

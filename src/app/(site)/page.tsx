@@ -99,7 +99,10 @@ export default async function Home() {
               </p>
             </div>
           ))}
-        <div style={{ fontSize: 6, letterSpacing: "0.2em" }}>
+        <div
+          className="hidden lg:block"
+          style={{ fontSize: 6, letterSpacing: "0.2em" }}
+        >
           {fishart.split("\n").map((e, i) => (
             <pre key={i}>{e}</pre>
           ))}
