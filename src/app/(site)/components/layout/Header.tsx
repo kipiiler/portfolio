@@ -93,6 +93,21 @@ function NavItems({ resumeObj }: { resumeObj: ProfileResumeType[] }) {
       <li className="ml-4 md:ml-0">
         {resumeObj.length > 0 && (
           <Link
+            onClick={() => {
+              const event = ({ action, category, label, value }: any) => {
+                (window as any).gtag("event", action, {
+                  event_category: category,
+                  event_label: label,
+                  value: value,
+                });
+              };
+              event({
+                action: "download",
+                category: "resume",
+                label: "resume",
+                value: 1,
+              });
+            }}
             href={`${resumeObj[0].resumeURL}?dl=Hoang_Nguyen_resume.pdf`}
             className="font-mono hover:text-orange-400 duration-300 flex items-center gap-x-2 border border-transparent rounded-md duration-200 py-2 text-left font-medium"
           >

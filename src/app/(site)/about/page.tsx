@@ -1,10 +1,12 @@
 // app/about/page.tsx
+"use client";
 
 import Image from "next/image";
 import { getProfile } from "@/sanity/sanity.query";
 import type { ProfileType } from "@/types";
 import { PortableText } from "@portabletext/react";
 import { BiEnvelope, BiFile } from "react-icons/bi";
+import { useEffect, useState } from "react";
 
 const CustomLink = ({ children, value }: any) => {
   const { href } = value;
@@ -20,8 +22,20 @@ const CustomLink = ({ children, value }: any) => {
   );
 };
 
-export default async function About() {
-  const profile: ProfileType[] = await getProfile();
+export default function About() {
+  //   const profile: ProfileType[] = await getProfile();
+
+  const [profile, setProfile] = useState<ProfileType[]>([]);
+
+  useEffect(() => {
+    async function fetchProfile() {
+      const profileData = await getProfile();
+      setProfile(profileData);
+      console.log(profileData);
+    }
+
+    fetchProfile();
+  }, []);
 
   const components = {
     marks: {
@@ -58,12 +72,35 @@ export default async function About() {
                     alt={data.profileImage.alt}
                   />
 
-                  <a
-                    href={`${data.resumeURL}?dl=${data.fullName}_resume.pdf`}
-                    className="flex items-center justify-center gap-x-2 bg-[#1d1d20] border border-transparent hover:border-zinc-700 rounded-md duration-200 py-2 text-center cursor-cell font-medium"
+                  <button
+                    onClick={() => {
+                      const event = ({
+                        action,
+                        category,
+                        label,
+                        value,
+                      }: any) => {
+                        (window as any).gtag("event", action, {
+                          event_category: category,
+                          event_label: label,
+                          value: value,
+                        });
+                      };
+                      event({
+                        action: "download",
+                        category: "resume",
+                        label: "resume",
+                        value: 1,
+                      });
+                      window.open(
+                        `${data.resumeURL}?dl=${data.fullName}_resume.pdf`,
+                        "_blank"
+                      );
+                    }}
+                    className="w-full flex items-center justify-center gap-x-2 bg-[#1d1d20] border border-transparent hover:border-zinc-700 rounded-md duration-200 py-2 text-center cursor-cell font-medium"
                   >
                     <BiFile className="text-base" /> Download Resumé
-                  </a>
+                  </button>
                 </div>
 
                 <ul>
@@ -103,5 +140,3 @@ export default async function About() {
     </main>
   );
 }
-
-export const revalidate = 1;
