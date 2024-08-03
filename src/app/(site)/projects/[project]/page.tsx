@@ -3,7 +3,7 @@ import { Metadata } from "next";
 import { getSingleProject } from "@/sanity/sanity.query";
 import type { ProjectType } from "@/types";
 import { PortableText } from "@portabletext/react";
-import { CustomPortableText } from "../../components/CustomPortableText";
+import { CustomPortableText } from "../../../components/CustomPortableText";
 
 type Props = {
   params: {
