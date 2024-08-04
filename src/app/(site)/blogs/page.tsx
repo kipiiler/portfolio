@@ -1,7 +1,6 @@
 import { PostCard } from "../../components/PostCard";
 import { allPosts } from "contentlayer/generated";
 import { compareDesc } from "date-fns";
-import Link from "next/link";
 
 export default function Home() {
   const posts = allPosts.sort((a, b) =>
