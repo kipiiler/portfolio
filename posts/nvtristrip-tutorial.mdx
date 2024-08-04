@@ -1,0 +1,357 @@
+---
+title: Integrating NvTriStrip with CMake for Optimized Triangle Strips
+description: Learn how to integrate NvTriStrip, a library for optimizing triangle strips, into your CMake-based C++ project. NvTriStrip improves rendering performance by reducing vertex fetches. We'll guide you through downloading, configuring, and using NvTriStrip, creating a streamlined setup for enhanced graphics performance.
+date: 2024-08-02
+---
+
+In this article, we'll walk through the process of integrating `NvTriStrip`, a popular library for optimizing triangle strips, into your CMake-based `C++` project. `NvTriStrip` can significantly improve the performance of rendering by reducing the number of vertices that need to be fetched from memory. We'll cover the steps to download, configure, and use `NvTriStrip` in a `CMake` project.
+### Get the source
+
+First, download `NvTriStrip` from the [official repository](https://github.com/turbulenz/NvTriStrip). Extract the contents to your preferred directory. If you are using `vckpg`, like myself, unfortunately, it is not supported. But don't worries, your `vcpkg` and `CMake` presets setup can still be saved. Since this is a relatively small library we could include it directly into your project.
+
+The structure of the repo would look something like this:
+
+```
+/NvTriStrip
+	/include
+		NvTriStrip.h
+    /src
+        NvTriStrip.cpp
+        NvTriStripObjects.cpp
+        NvTriStripObjects.h
+        VertexCache.cpp
+        VertexCache.h
+    Makefile
+    NvTriStrip-2010.vcxproj
+    NvTriStrip-2012.vcxproj
+    ....
+    NvTriStrip-2019.vcxproj
+    NvTriStrip.vcproj
+    README.txt
+```
+
+The only thing that you need to care about is the `include` and `src` directory, that where all the code lived. Notice that we don't have a `CMakeLists.txt` file for CMake to configure, that what we are going to do.
+
+### Integrating `NvTriStrip` into your project
+
+Assume your project structure is like this:
+
+```
+/build
+/src
+	/module3
+	/module2
+	/module1
+	main.cpp
+CMakeLists.txt
+CMakePresets.json
+vcpkg.json
+```
+
+**Move Files:** Create a `library/nvdiastrip` directory and move all the header and cpp files from the `NvTriStrip` repo there.
+
+```
+/build
+/src
+	/module3
+	/module2
+	/module1
+	/library
+		/nvdiastrip
+			NvTriStrip.h
+			NvTriStrip.cpp
+			NvTriStripObjects.cpp
+			NvTriStripObjects.h
+			VertexCache.cpp
+			VertexCache.h
+	main.cpp
+CMakeLists.txt
+CMakePresets.json
+vcpkg.json
+```
+
+What I would like to do when importing module like this is to create a directory for each of module, `nvdiastrip` for example in this case, then have a `CMakeLists.txt` to link all those imported module together instead of `CMakeLists.txt` for each of the module. This is a personal preference and may not be the conventional practice, but it simplifies maintenance and works well for me, especially since most complex modules or packages are available through `vcpkg`. This method is particularly effective for simpler modules.
+
+One other thing I also do is wrap the module with a namespace so we don't have symbol conflict with other modules.
+
+```cpp
+namespace NVTRISTRIP {
+
+///////////////////////////////////////////////////////////////////////////////////
+
+// Public interface for stripifier
+  ///////////////////////////////////////////////////////////////////////////////////
+	
+	//GeForce1 and 2 cache size
+	#define CACHESIZE_GEFORCE1_2 16
+	
+	//GeForce3 cache size
+	#define CACHESIZE_GEFORCE3   24
+	
+	enum PrimType
+	{
+		PT_LIST,
+		PT_STRIP,
+		PT_FAN
+	};
+
+.....
+
+// The rest of the file content go here
+
+} // namespace NVTRISTRIP
+```
+
+### Main CMakeLists.txt Integration
+
+Now let create a simple `CMakeLists.txt` in library directory
+
+```bash
+set(SOURCES_FILES
+    "nvdiastrip/NvTriStrip.cpp"
+    "nvdiastrip/NvTriStrip.h"
+    "nvdiastrip/NvTriStripObjects.cpp"
+    "nvdiastrip/NvTriStripObjects.h"
+    "nvdiastrip/VertexCache.cpp"
+    "nvdiastrip/VertexCache.h"
+  )
+
+add_library(library ${SOURCES_FILES})
+
+target_include_directories(library PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+```
+
+Let it break down:
+
+- `set(SOURCES_FILES ...)`:
+	- This command defines a variable named `SOURCES_FILES` that contains a list of source files (.cpp) and header files (.h) for the NvTriStrip project.
+	- Each file is specified relative to the directory containing the CMakeLists.txt file.
+
+- `add_library(library ${SOURCES_FILES})`:
+	- This command creates a library target named `library` from the source files listed in the `SOURCES_FILES` variable.
+	- The resulting library can be a static or shared library, depending on the CMake configuration or additional commands not shown here.
+	
+- `target_include_directories(library PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})`:
+	- This command specifies the include directories for the `library` target.
+	- `PUBLIC` means that both the library itself and any targets that link to it will use this include directory.
+	- `${CMAKE_CURRENT_SOURCE_DIR}` is a CMake variable that holds the path to the directory where the current CMakeLists.txt file is located. This makes all headers in the current source directory accessible to the library and any dependent projects.
+
+Now we need to link it to our main `CMakeLists.txt`
+
+```bash
+add_subdirectory(src/library)
+
+# rest of the CMakeLists.txt file
+
+target_link_libraries(MyProject PRIVATE library)
+```
+
+Full version `CMakeLists.txt` for reference at the end
+
+To use the NvTriStripper, the main function you should care about is
+
+```cpp
+bool GenerateStrips(const unsigned int* in_indices, unsigned int in_numIndices,
+					 PrimitiveGroup** primGroups, unsigned int* numGroups, 
+					 bool validateEnabled = false)
+
+```
+
+We would create a list of indices
+
+```cpp
+<std::vector<unsigned int> indices;
+```
+
+Below is an example for function that read the bunny model from and obj file. You can get these indices data from anything format or source that you want.
+
+```cpp
+std::vector<std::vector<unsigned int>> readTrianglesFromObj(const std::string& filename) {
+
+std::vector<std::vector<unsigned int>> triangles;
+std::ifstream file(filename);
+if (!file.is_open()) {
+	std::cerr << "Failed to open file: " << filename << std::endl;
+	return triangles;
+}
+
+
+
+std::string line;
+while (std::getline(file, line)) {
+	if (line.substr(0, 2) == "f ") {
+		std::istringstream iss(line.substr(2));
+		std::vector<unsigned int> triangle;
+		std::string vertexStr;
+
+		while (iss >> vertexStr) {
+			std::istringstream vertexStream(vertexStr);
+			std::string indexStr;
+			unsigned int vertexIndex;
+			std::getline(vertexStream, indexStr, '/'); // read the vertex index
+			vertexIndex = std::stoi(indexStr) - 1; // OBJ uses 1-based indices
+			triangle.push_back(vertexIndex);
+		}
+
+		if (triangle.size() == 3) {
+			triangles.push_back(triangle);
+		} else {
+			std::cerr << "Invalid face format in line: " << line << std::endl;
+		}
+	}
+}
+
+
+
+file.close();
+return triangles;
+}
+```
+
+Then config the stripification constrains:
+
+`NVTRISTRIP::SetCacheSize(size)`: Set the cache size so that the stripper aware about how many indices can go into a cache line so that. This is most interesting config, more on this later. 
+
+`NVTRISTRIP::SetListsOnly(false)`: If set to true, will return an optimized list, with no strips at all.
+
+`NVTRISTRIP::SetStitchStrips(false)`: If set to true, you'll get back one huge strip stitched together using degenerate triangles, otherwise, you'll get back a large number of separate strips.
+
+`NVTRISTRIP::SetMinStripSize(0)`Set the minimum strip length per generated strip node. Any strip generated smaller than this number will be throw into a separate list (not stitch).
+
+You can set up a toy version like this:
+
+```cpp
+// Setup
+NVTRISTRIP::PrimitiveGroup* primitiveGroups = nullptr;
+unsigned int numGroups = 0;
+
+//  Stripify
+NVTRISTRIP::SetCacheSize(size);
+NVTRISTRIP::SetListsOnly(false);
+NVTRISTRIP::SetStitchStrips(false);
+NVTRISTRIP::GenerateStrips(indices.data(), indices.size(), &primitiveGroups, &numGroups);
+```
+
+Full example at the end of the blog
+
+This will result in the generation of a list of strips node that made up for the list of indices that you give to it, store in this intermediate structure `primitiveGroups`. Each element in `primitiveGroups` have `numIndices` count of indices per strip, `indices` pointer to start of the strip and `type`.
+
+An example code to print out all the strip nodes and the result:
+```cpp
+for (unsigned int i = 0; i < numGroups; i++) {
+	NVTRISTRIP::PrimitiveGroup& group = primitiveGroups[i];
+	std::cout << "Strip " << i << ": " << std::endl;
+	for (unsigned int j = 0; j < group.numIndices; j++) {
+		std::cout << group.indices[j] << " ";
+	}
+	std::cout << std::endl;
+}
+```
+
+```text
+Strip 260:
+4151 4151 4152 1446 194 4156 194 243 4153 4154 197 278 197 277 197 199 1447 1448 12292 4106 198 4105 200 4126 4127 202 2352 4135 256 4136 4142 2362 4144 2362 260
+Strip 261:
+4153 4152 194
+Strip 262:
+197 197 4153 1447 4152 12292 4151 
+Strip 263:
+243 4155 4156 2315 2306 2315 193 244 2316
+Strip 264:
+266 265 4048 4047 4048 264 4052 264 268 264 1432 263 1431 225
+Strip 265:
+4163 249 6782 2321 6782 6781 2322 6781 2320 6780 6779 2319 6778 247 6778 4167 6778 12291 2317 4166 2317 4164 192 12290 192 2342 2341 4159 4160 2349
+Strip 266:
+6781 6781 2321 6780 248 2319
+Strip 267:
+4162 191 2322 2320
+Strip 268:
+6779 6779 6778 2318 2317 2318 192 4165 2341 4165 191 2318 2320 6779 
+Strip 269:
+6792 6792 4076 6820 6819 4077 6818 4077 1431 4079 225 4078 263 228 264 231 4047 6840 6839 4088 6838 232 6837 4087 6837 234 6836 6810 235 237 235 239 238 185
+```
+
+### Visualizing Results
+
+In OpenGL, triangles in a strip follow a counterclockwise culling convention. For instance, a sequence like `4162 191 2322 2320` might be split into two triangles: `[[4162 191 2322], [191 2322 2320]]`.
+
+When working with triangle strips, adjusting the cache size can significantly affect the resulting strip distribution. Here’s how different cache sizes influence the outcome:
+
+1. **Smaller Cache Sizes**: Using a cache size of 8 can result in more compact strips. This is because smaller caches often lead to more frequent cache misses, which encourages the generation of shorter, more manageable strips. To optimize, you might manually merge these shorter strips into longer ones. The result is often a patchy distribution, as the algorithm prioritizes local optimization within the constraints of the small cache.
+2. **Larger Cache Sizes**: On the other hand, a cache size of 256 tends to produce longer, thinner strips. Larger caches can hold more data, reducing the frequency of cache misses and allowing for longer contiguous strips. This setup often results in a more uniform distribution across the model, with the strips appearing more aligned and organized, particularly when segments of different colors are involved.
+
+By experimenting with these cache sizes, you can observe these effects firsthand. A smaller cache, especially when combined with sorting and clustering, will likely give you a patchy distribution of strips. In contrast, a larger cache tends to produce a more consistent and linear distribution, leading to a more streamlined appearance.
+
+You can see the result with cache size of 8 (with clustering on merge) and a cache size of 256 have differences in distribution.
+
+![Pasted image 20240802211256.png](https://kipiiler.github.io/image-for-blog/Pasted%20image%2020240802211256.png "Strips visualize with cache size 8 with difference color for each strip segment")
+{/* $$\text{Strips visualize with cache size 8 with difference color for each strip segment}$$ */}
+
+![Pasted image 20240802211120.png](https://kipiiler.github.io/image-for-blog/Pasted%20image%2020240802211120.png "Strips visualize with cache size 256 with difference color for each strip segment")
+{/* $$\text{Strips visualize with cache size 256 with difference color for each strip segment}$$ */}
+
+The cache size also affect the number of strip node that it create, generally, a bigger cache size would attempt to create a longer strip to cover more triangles per strip, so that the number of strip nodes for a model would reduce. In contrast, a smaller cache size often leads to more strip short nodes and a patchier distribution. Keep this in mind if you are tuning for a sweet spot of the right balance between memory usage and the desired strip behavior.
+
+Experiment with different cache sizes to discover the sweet spot that best balances memory cost with the strip distribution characteristics you need.
+
+![Pasted image 20240730202529.png](https://kipiiler.github.io/image-for-blog/Pasted%20image%2020240730202529.png "Relationship between the number of strips and the maximum length of all strips versus cache size ")
+{/* Relationship between the number of strips and the maximum length of all strips versus cache size */}
+
+### Code examples
+
+```cpp 
+#include <vector>
+#include "NvTriStrip.h"
+
+int main() {
+    // Setup
+    NVTRISTRIP::PrimitiveGroup* primitiveGroups = nullptr;
+    unsigned int numGroups = 0;
+    
+    // Create a list of indices
+    std::vector<unsigned int> indices = { /* your indices here */ };
+
+    // Configure stripification constraints
+    NVTRISTRIP::SetCacheSize(16); // Example cache size
+    NVTRISTRIP::SetListsOnly(false);
+    NVTRISTRIP::SetStitchStrips(false);
+    NVTRISTRIP::SetMinStripSize(0);
+
+    // Generate strips
+    NVTRISTRIP::GenerateStrips(indices.data(), indices.size(), &primitiveGroups, &numGroups);
+
+    // Output results
+    for (unsigned int i = 0; i < numGroups; ++i) {
+        NVTRISTRIP::PrimitiveGroup& group = primitiveGroups[i];
+        std::cout << "Strip " << i << ": ";
+        for (unsigned int j = 0; j < group.numIndices; ++j) {
+            std::cout << group.indices[j] << " ";
+        }
+        std::cout << std::endl;
+    }
+
+    return 0;
+}
+
+```
+
+```bash
+cmake_minimum_required(VERSION 3.21)
+project(MyProject)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+# Add the module subdirectory
+add_subdirectory(src/algorithm)
+
+# Manual module
+add_subdirectory(src/library)
+
+add_executable(MyProject src/main.cpp)
+
+find_package(nlohmann_json CONFIG REQUIRED)
+target_link_libraries(MyProject PRIVATE nlohmann_json::nlohmann_json)
+target_link_libraries(MyProject PRIVATE library)
+```
