@@ -7,7 +7,6 @@ import Navbar from "../components/layout/Header";
 import Footer from "../components/layout/Footer";
 import GoogleAnalytics from "../components/GoogleAnalytics";
 import { Analytics } from "@vercel/analytics/react";
-import { HydrationOverlay } from "@builder.io/react-hydration-overlay";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -40,7 +39,8 @@ export default function RootLayout({
         className={`${inter.className} bg-zinc-900 text-white`}
       >
         <Navbar />
-        <HydrationOverlay>{children}</HydrationOverlay>
+        {/* <HydrationOverlay>{children}</HydrationOverlay> */}
+        {children}
         <Footer />
       </body>
     </html>

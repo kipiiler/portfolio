@@ -1,4 +1,4 @@
-import { Codeblock } from "./mdx/Codeblock";
+import { Codeblock } from "./mdx/CodeBlock";
 import { WEBSITE_HOST_URL } from "../lib/constants";
 import { allPosts } from "contentlayer/generated";
 import { format, parseISO } from "date-fns";
