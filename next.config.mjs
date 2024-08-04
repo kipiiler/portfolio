@@ -1,8 +1,12 @@
-import withMDX from '@next/mdx';
-import { withContentlayer } from 'next-contentlayer'
+import withMDX from "@next/mdx";
+import { withContentlayer } from "next-contentlayer";
+// const {
+//   withHydrationOverlay,
+// } = require("@builder.io/react-hydration-overlay/next");
+import { withHydrationOverlay } from "@builder.io/react-hydration-overlay/next";
 
 async function getNextConfig() {
-  const recmaMdxDisplayname = await import('recma-mdx-displayname');
+  const recmaMdxDisplayname = await import("recma-mdx-displayname");
 
   /** @type {import('next').NextConfig} */
   const nextConfig = {
@@ -13,9 +17,14 @@ async function getNextConfig() {
           hostname: "cdn.sanity.io",
           port: "",
         },
+        {
+          protocol: "https",
+          hostname: "kipiiler.github.io",
+          port: "",
+        },
       ],
     },
-    pageExtensions: ['js', 'jsx', 'mdx', 'ts', 'tsx'],
+    pageExtensions: ["js", "jsx", "mdx", "ts", "tsx"],
   };
 
   const mdxConfig = {
@@ -29,4 +38,10 @@ async function getNextConfig() {
 }
 
 const nextConfig = await getNextConfig();
-export default withContentlayer(nextConfig);
+export default withHydrationOverlay({
+  /**
+   * Optional: `appRootSelector` is the selector for the root element of your app. By default, it is `#__next` which works
+   * for Next.js apps with pages directory. If you are using the app directory, you should change this to `main`.
+   */
+  appRootSelector: "main",
+})(withContentlayer(nextConfig));

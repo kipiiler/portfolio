@@ -1,6 +1,6 @@
 ---
 title: Integrating NvTriStrip with CMake for Optimized Triangle Strips
-description: Steps to help you get started with Next.js MDX Blog
+description: Learn how to integrate NvTriStrip, a library for optimizing triangle strips, into your CMake-based C++ project. NvTriStrip improves rendering performance by reducing vertex fetches. We'll guide you through downloading, configuring, and using NvTriStrip, creating a streamlined setup for enhanced graphics performance.
 date: 2024-08-02
 ---
 
@@ -74,7 +74,7 @@ What I would like to do when importing module like this is to create a directory
 
 One other thing I also do is wrap the module with a namespace so we don't have symbol conflict with other modules.
 
-```
+```cpp
 namespace NVTRISTRIP {
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -106,7 +106,7 @@ namespace NVTRISTRIP {
 
 Now let create a simple `CMakeLists.txt` in library directory
 
-```
+```bash
 set(SOURCES_FILES
     "nvdiastrip/NvTriStrip.cpp"
     "nvdiastrip/NvTriStrip.h"
@@ -138,10 +138,10 @@ Let it break down:
 
 Now we need to link it to our main `CMakeLists.txt`
 
-```
+```bash
 add_subdirectory(src/library)
 
-// rest of the CMakeLists.txt file
+# rest of the CMakeLists.txt file
 
 target_link_libraries(MyProject PRIVATE library)
 ```
@@ -150,19 +150,22 @@ Full version `CMakeLists.txt` for reference at the end
 
 To use the NvTriStripper, the main function you should care about is
 
-```
+```cpp
 bool GenerateStrips(const unsigned int* in_indices, unsigned int in_numIndices,
 					 PrimitiveGroup** primGroups, unsigned int* numGroups, 
 					 bool validateEnabled = false)
+
 ```
 
 We would create a list of indices
 
-```<std::vector<unsigned int> indices;```
+```cpp
+<std::vector<unsigned int> indices;
+```
 
 Below is an example for function that read the bunny model from and obj file. You can get these indices data from anything format or source that you want.
 
-```
+```cpp
 std::vector<std::vector<unsigned int>> readTrianglesFromObj(const std::string& filename) {
 
 std::vector<std::vector<unsigned int>> triangles;
@@ -281,22 +284,22 @@ By experimenting with these cache sizes, you can observe these effects firsthand
 
 You can see the result with cache size of 8 (with clustering on merge) and a cache size of 256 have differences in distribution.
 
-![[Pasted image 20240802211256.png]]
-
+![Pasted image 20240802211256.png](https://kipiiler.github.io/image-for-blog/Pasted%20image%2020240802211256.png "Strips visualize with cache size 8 with difference color for each strip segment")
 {/* $$\text{Strips visualize with cache size 8 with difference color for each strip segment}$$ */}
 
-![[Pasted image 20240802211120.png]]
+![Pasted image 20240802211120.png](https://kipiiler.github.io/image-for-blog/Pasted%20image%2020240802211120.png "Strips visualize with cache size 256 with difference color for each strip segment")
 {/* $$\text{Strips visualize with cache size 256 with difference color for each strip segment}$$ */}
 
 The cache size also affect the number of strip node that it create, generally, a bigger cache size would attempt to create a longer strip to cover more triangles per strip, so that the number of strip nodes for a model would reduce. In contrast, a smaller cache size often leads to more strip short nodes and a patchier distribution. Keep this in mind if you are tuning for a sweet spot of the right balance between memory usage and the desired strip behavior.
 
 Experiment with different cache sizes to discover the sweet spot that best balances memory cost with the strip distribution characteristics you need.
 
-![[Pasted image 20240730202529.png]]
-{/* $$\text{Relationship between \# of strips and max length of all strips v.s. cache size}$$ */}
+![Pasted image 20240730202529.png](https://kipiiler.github.io/image-for-blog/Pasted%20image%2020240730202529.png "Relationship between the number of strips and the maximum length of all strips versus cache size ")
+{/* Relationship between the number of strips and the maximum length of all strips versus cache size */}
+
 ### Code examples
 
-```
+```cpp 
 #include <vector>
 #include "NvTriStrip.h"
 
@@ -332,7 +335,7 @@ int main() {
 
 ```
 
-```
+```bash
 cmake_minimum_required(VERSION 3.21)
 project(MyProject)
 

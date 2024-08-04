@@ -3,14 +3,13 @@ title: Next.js MDX Blog
 description: Steps to help you get started with Next.js MDX Blog
 date: 2023-09-16
 ---
+import { Callout } from "src/app/components/Callout.tsx";
 
-<Image
-  alt={`Bridge`}
-  src={`/images/bridge.jpg`}
-  width={1440}
-  height={960}
-  priority
-/>
+<Callout type="info">
+  Due to the fact that `next-auth` currently doesn't support `react-native`, and
+  I do not want to prescribe _a way_ to solve this problem, I'll leave auth out
+  entirely for this demo.
+</Callout>
 
 ### Getting Started
 
