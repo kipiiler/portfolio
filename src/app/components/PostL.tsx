@@ -66,6 +66,7 @@ const HighlightLinks = ({ text }: {text: string}) => {
       {parts.map((part, index) =>
         urlRegex.test(part) ? (
           <RefLink
+            key={index}
             href={part as string}
             className="dark:text-orange-400 text-orange-500 hover:underline"
           >{part} <BiLinkExternal className="inline" aria-hidden="true"/>
