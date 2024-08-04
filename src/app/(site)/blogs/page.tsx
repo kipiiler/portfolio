@@ -11,7 +11,7 @@ export default function Home() {
   return (
     <main className="max-w-7xl mx-auto md:px-16 px-6">
       <section className="max-w-7xl mb-16">
-        <h1 className="text-3xl font-bold tracking-tight sm:text-5xl mb-6 lg:leading-[3.7rem] leading-tight">
+        <h1 className="transition ease-linear delay-150 hover:-translate-y-1 hover:-scale-y-100 text-3xl font-bold tracking-tight sm:text-5xl mb-6 lg:leading-[3.7rem] leading-tight">
           From the blogs
         </h1>
         <p className="text-base text-zinc-400 leading-relaxed">

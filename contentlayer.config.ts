@@ -7,6 +7,14 @@ import remarkMath from "remark-math";
 // import rehypeKatex from "rehype-katex";
 import rehypeMathjax from "rehype-mathjax";
 
+function calculateReadingTime(wordCount: number) {
+  const avgReadingSpeed = 225; // words per minute
+
+  const readingTimeMinutes = wordCount / avgReadingSpeed;
+
+  return readingTimeMinutes;
+}
+
 const Post = defineDocumentType(() => ({
   name: "Post",
   filePathPattern: "**/*.mdx",
@@ -27,12 +35,21 @@ const Post = defineDocumentType(() => ({
       description: "The description of the post",
       required: true,
     },
+    author: {
+      type: "string",
+      description: "The author of the post",
+      required: true,
+    },
   },
   computedFields: {
     url: {
       type: "string",
       resolve: (doc) => `/blogs/${doc._raw.flattenedPath}`,
     },
+    estimate : {
+      type: "string",
+      resolve: (doc) => calculateReadingTime(doc.body.raw.split(" ").length)
+    }
   },
 }));
 
