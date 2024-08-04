@@ -76,7 +76,7 @@ export const CustomPortableText: PortableTextComponents = {
       return (
         <RefLink
           href={value?.href}
-          className="dark:text-blue-400 text-blue-500 hover:underline"
+          className="dark:text-orange-400 text-orange-500 hover:underline"
         >
           {children} <BiLinkExternal className="inline" aria-hidden="true" />
         </RefLink>

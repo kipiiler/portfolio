@@ -5,13 +5,16 @@ import Link from 'next/link'
 export function PostCard(post: Post) {
   return (
     <article className="flex flex-col items-start justify-between">
-      <div className="flex items-center gap-x-4 text-xs">
+      <div className="flex items-center justify-between gap-x-4">
+        <div className='font-bold border-amber-500 rounded-md px-4 py-1 text-sm text-orange-400 border-2'>
+          Est: {Math.round(Number(post.estimate))} min
+        </div>
         <time dateTime={post.date}>
           {format(parseISO(post.date), 'LLLL d, yyyy')}
-        </time>
+        </time>     
       </div>
-      <div className="group relative">
-        <h3 className="mt-3 text-lg font-semibold leading-6">
+      <div className="group relative mt-4">
+        <h3 className="duration-300 mt-3 text-3xl font-semibold leading-6 hover:text-orange-400 ">
           <Link className="link" href={post.url}>
             <span className="absolute inset-0" />
             {post.title}

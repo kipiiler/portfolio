@@ -1,0 +1,173 @@
+---
+title: Triangular Shenanigans. Lists or Strips
+description: This blog explores the differences between triangle lists and triangle strips in computer graphics, emphasizing the efficiency and performance benefits of using strips. It delves into stripification techniques, the advantages of strips for GPU memory and rendering, and practical implementation with OpenGL and NvTriStrip.
+date: 2024-08-04
+author: Hoang Nguyen
+---
+import { Callout } from "src/app/components/Callout.tsx";
+
+## Background
+
+In computer graphics, a **triangle mesh** is a collection of triangles that represents a 3D surface or object. Each triangle is defined by three vertices, and these vertices are typically stored in an index buffer. Triangle meshes are fundamental in 3D rendering because they are simple yet versatile, allowing for the efficient representation of complex shapes.
+
+A **triangle list** is one of the simplest ways to organize a triangle mesh. In a triangle list, each set of three consecutive vertices defines a single triangle. For example, vertices 0, 1, and 2 form the first triangle, vertices 3, 4, and 5 form the second triangle, and so on. While straightforward, triangle lists can be inefficient because they do not reuse vertices: each vertex is used only once per triangle, even if it is shared by multiple triangles.
+
+## What is it, why it is important
+
+**Strips** or **triangle strips** are an optimized structure that benefits the rendering pipeline by leveraging cache locality in the GPU. [[GPUs are typically constrained in memory]] due to the high number of cores sharing a small cache (compared to CPUs). By reusing indices in the buffer as much as possible, triangle strips reduce the amount of data that needs to be transferred and processed, improving rendering performance.
+
+<Callout type="note">
+  I use the terms "strips" and "triangle strips" interchangeably; they mean the same thing!
+</Callout>
+
+
+![Pasted image 20240802205511.png](https://kipiiler.github.io/image-for-blog/Pasted%20image%2020240802205511.png "Partial visualization of strips on Stanford Bunny model, each color segment represent a strip")
+
+Consider this indices buffer:
+
+`
+[[17227, 9694, 17346], [17346, 17347, 9715], [9694, 17346, 17347], [9714, 5712, 20117], etc...]
+`
+
+Notice that some indices belong to different triangles and appear more than once in the list. The strip node takes advantage of this by reordering the indices so they reside in the same cache line when called, resulting in much better cache coherence.
+
+Using the Nvidia tri-stripper a.k.a. `NvTriStrip` (an implementation for algorithm that turns triangle list to triangle strips) will produce the following strip, with every 3 indices representing a triangle in clockwise order:
+
+`[17227, 9694, 17346, 17347, 9715, 9714, 5712, 20117, etc...]`
+
+This translates to:
+
+`[17227, 9694, 17346], [9694, 17346, 17347], [17346, 17347, 9715], etc...`
+
+<Callout type="info">
+`NvTriStrip` follow OpenGl convention for [triangle face culling](https://learnopengl.com/Advanced-OpenGL/Face-culling). "By convention, polygons whose vertices appear in counterclockwise order on the screen are called front-facing.
+</Callout>
+
+In the arrangement above, you can see that for each pair of triangles, at least two indices are shared between them while still maintaining the correct triangles from the original list.
+
+In an ideal situation, this can reduce the memory required for the model triangle data from `3N` to `N + 2`, assuming your model can be converted into a **single** strip. While this is not the case for most scenarios, and you would likely have multiple strips per model, it still offers memory savings.
+
+Then why it is important. As said above one significant property of strips is their high temporal data locality. When a new primitive is assembled, each vertex must be retrieved from GPU memory, which for a triangle, means three memory accesses. Memory access is typically slow, hence processors use multiple cache levels to speed this up. Ideally, we would want the required data is already in the cache, minimizing access time. In the case of triangle strips, the last two vertices of the previous primitive are reused, almost ensuring that two out of three vertices are already in the cache.
+
+## Stripification
+
+Converting a triangle list to a strip is straightforward, but the challenge is in creating an efficient primitive strip by minimizing the number of sub-strips.
+
+The process that takes in the triangle list and results in a triangle strip is called **Stripification**.
+
+One technique that allows the stripification process to achieve this is by building a graph where each node represents a triangle, and the edges between nodes are determined by the following criteria:
+- Two triangles must be adjacent (sharing 2 vertices).
+- Their face culling/winding direction must be the same.
+
+![Pasted image 20240730171044.png](https://kipiiler.github.io/image-for-blog/Pasted%20image%2020240730171044.png "Source: https://github.com/GPSnoopy/TriStripper")
+
+The above triangles map to this below graph.
+
+![Pasted image 20240730171058.png](https://kipiiler.github.io/image-for-blog/Pasted%20image%2020240730171058.png "Source: https://github.com/GPSnoopy/TriStripper")
+
+<Callout type="note">
+  Triangles A,B,C,D are sharing edges and have the same winding direction, therefore they are connected. E is also sharing edge with D but not in the same winding direction, therefore, not connected. F is alone so it is also not connected to any other nodes.
+</Callout>
+
+Then the algorithm would search along all the nodes for paths to form those strips, adhering to constraints such as vertex cache size. Each of the path would eventually become a strip node. For example, `NvTriStrip` allows configuration settings for vertex cache size, strip stitching, minimum strip size, and other parameters.
+
+There are more complicated methods for stripification, but most still involve creating a graph to represent the relationships between triangles. These advanced techniques focus on optimizing the stripification process to further minimize the number of sub-strips and enhance performance.
+
+If you want to read more about different techniques and comparisons between them, check out this [paper](https://old.cescg.org/CESCG-2002/PVanecek/paper.pdf) (a more recent version is available [here](https://www.researchgate.net/publication/234802608_Comparison_of_triangle_strips_algorithms)).
+
+## Using stripification algorithm
+
+Here are some popular open-source repositories I found online for stripification implementations:
+[MeshOptimizer](https://github.com/zeux/meshoptimizer)
+[NvTriStrip](https://github.com/turbulenz/NvTriStrip)
+[TriStripper](https://github.com/GPSnoopy/TriStripper)
+
+For information on integrating NvTriStrip with CMake for optimized triangle strips, stay tuned for the upcoming section, check out this blog: [Integrating NvTriStrip with CMake for Optimized Triangle Strips](https://www.kipiiler.me/blogs/nvtristrip-tutorial). From this we can obtains a strips to pass into our rendering pipeline.
+
+[OpenGL](https://en.wikipedia.org/wiki/OpenGL "OpenGL") natively supports triangle strips. In the deprecated fixed-function pipeline (prior to OpenGL 3.0), triangle strips were created using immediate mode with the `glBegin()`, `glVertex*()`, and `glEnd()` functions. In contemporary OpenGL, triangle strips are rendered using `glDrawElements` and `glDrawArrays`.
+
+To draw a triangle strip in OpenGL using modern methods, you can use `glDrawElements()` with the `GL_TRIANGLE_STRIP` argument. This informs OpenGL that you are drawing a triangle strip. Here's an example:
+
+```
+// Define the indices for the triangle strip
+GLuint indices[] = {list of ur indices, should map to vertices};
+
+// Dummy data
+GLfloat vertices[] = { 0.0f, 0.0f, 0.0f, 0.5f, 0.0f, 0.0f, 0.5f, 0.5f, 0.0f, 0.0f, 0.5f, 0.0f, -0.5f, 0.5f, 0.0f, -0.5f, 0.0f, 0.0f, -0.5f, -0.5f, 0.0f, 0.0f, -0.5f, 0.0f, };
+
+// Create and bind a Vertex Array Object (VAO) GLuint VAO; glGenVertexArrays(1, &VAO); 
+glBindVertexArray(VAO); 
+
+// Create and bind a Vertex Buffer Object (VBO) 
+GLuint VBO; glGenBuffers(1, &VBO); glBindBuffer(GL_ARRAY_BUFFER, VBO); glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); 
+
+// Create and bind an Element Buffer Object (EBO) 
+GLuint EBO; glGenBuffers(1, &EBO); glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO); glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+```
+
+```
+// On main call
+// Draw the triangle strip
+glDrawElements(GL_TRIANGLE_STRIP, 8, GL_UNSIGNED_INT, 0);
+```
+
+In this call:
+- `GL_TRIANGLE_STRIP` specifies the mode, indicating you are drawing a triangle strip.
+- `count` is the number of elements to be rendered.
+- `GL_UNSIGNED_INT` specifies the type of the values in the `indices` array.
+- `indices` is a pointer to the index array that defines the strip.
+
+We can use any other rendering context to draw the strip we got from the stripification algorithm as well (Vulkan, Metal, DirectX, etc...).
+
+## Stitching Strips
+
+A common method for linking all the strips together is to use degenerate triangles. Since we need to draw triangles using three consecutive indices, we face an edge case when merging the end of one strip with the beginning of another. If merged directly, they would not form valid triangles.
+
+For example, merging strips `ABC` and `DEF` would result in `ABCDEF`, where `BCD` and `CDE` are not valid triangles.
+
+To address this, we create degenerate triangles — triangles with an area of 0 — by duplicating vertices. For instance, `BCC` forms a 0-area surface, effectively a line, which OpenGL does not render. Placing this between strips ensures proper stitching without rendering invalid triangles.
+
+So, `ABCCDEF` produces degenerate triangles `BCC` and `CCD` between valid triangles, effectively stitching the strips together without rendering the degenerate ones. Each operation to create a degenerate triangle is called a _swap_ (as described in this [paper](https://old.cescg.org/CESCG-2002/PVanecek/paper.pdf)), and the stitched strip is referred to as _generalized strips_. For simplicity, we call these duplicated vertices.
+
+By stitching all the strips in a model together, we achieve a reduction in memory cost from `3N` to `N + 2 + number of duplicated vertices`. Therefore, generating each strip as long as possible minimizes the total number of strips and duplicated vertices, optimizing memory usage.
+
+Another approach involves storing auxiliary data structures that indicate whether to draw a triangle. For example, for the strip `ABCDEF`, an array `[1, 0, 0, 1]` could be used to indicate that triangles at positions `ith` in the array corresponding to triangle `ith` should not be drawn if this flag is set to 0.
+
+Some other more complicated can involve backtracking the current strip to see if they shared edge with the next strip. This process is describe in this [paper](https://gpuopen.com/download/publications/DGF.pdf). Where they maintain a 2-bit control field is used per triangle to indicate one of four possible actions for backtracking:
+
+- **0:** Consume 3 indices and start a new triangle, effectively restarting the strip.
+- **1:** Consume 1 index and reuse edge 1 from the previous triangle (triangle i - 1).
+- **2:** Consume 1 index and reuse edge 2 from the previous triangle (triangle i - 1).
+- **3:** Consume 1 index, reuse the remaining edge from the triangle before the last (triangle i - 2).
+
+The first triangle always restarts the strip, as it has no predecessor to reference. For triangles that reuse edges, the vertices are adjusted to maintain the correct winding order. This approach ensures proper triangle formation and efficient strip continuation. This created a limited backtracking behavior as illustrate with image below, we doted path represent backtracking.
+
+![Pasted image 20240731160503.png](https://kipiiler.github.io/image-for-blog/Pasted%20image%2020240731160503.png "A strips stitched by backtracking. Source: https://gpuopen.com/download/publications/DGF.pdf")
+
+The process of stitching strips has a significant impact on rendering efficiency and memory usage. By linking adjacent strips with degenerate triangles, stitching effectively reduces the number of individual strips needed to represent a model. This approach minimizes the total memory footprint by consolidating multiple strips into longer, continuous ones, thereby reducing overhead and fragmentation. Ultimately, the stitching process enhances both the computational efficiency and visual quality of the rendered model, making it a crucial technique in graphics optimization.
+
+![Pasted image 20240730171932.png](https://kipiiler.github.io/image-for-blog/Pasted%20image%2020240730171932.png "a. Image of a bad strips (above), b. Image of a good strips (below). Source: https://research.cs.queensu.ca/home/jstewart/papers/gi01.pdf")
+
+## Caveats
+
+While triangle strips are beneficial for reducing memory usage and improving rendering performance, they present several drawbacks. 
+
+One significant issue is their complexity in handling non-conforming or irregular meshes. For instance, when dealing with a model that has many disconnected or complex regions, such as a detailed character model with intricate geometry, creating and maintaining long strips can become challenging. The need to manage the connectivity of vertices across diverse mesh areas can lead to inefficient stripification and increase the complexity of the strip generation process. You can experience this by setting vertex cache size in `NvTriStrip` to a really smaller number (simulating disconnected regions), in which most case it generate a strip per triangle. Merging them together using degenerate triangles can create  introduces even more extra memory.
+
+Triangle strips also have limitations in flexibility; they are not as adaptable as indexed triangle lists for representing models with varying topologies or frequent connectivity changes. For example, in animated characters or dynamic objects where vertices move frequently or change topology, such as during skinning or deformation, triangle strips may struggle to efficiently adapt to these changes. In contrast, indexed triangle lists can more easily accommodate such variations by simply updating indices without needing to reconfigure the entire strip structure. This rigidity makes triangle strips less suitable for scenarios involving complex animations or frequent modifications to the model’s geometry.
+
+ **Thanks for reading!**
+ 
+## Reference 
+
+1. \[1\] Learn OpenGL ES. *Triangle Strips*. Retrieved from [https://www.learnopengles.com/tag/triangle-strips/](https://www.learnopengles.com/tag/triangle-strips/)
+2. \[2\] Wikipedia. *Triangle strip*. Retrieved from [https://en.wikipedia.org/wiki/Triangle_strip](https://en.wikipedia.org/wiki/Triangle_strip)
+3. \[3\] Stewart, J. (2001). *Tunneling for Triangle Strips in Continuous Level–of–Detail Meshes*. Retrieved from [https://research.cs.queensu.ca/home/jstewart/papers/gi01.pdf](https://research.cs.queensu.ca/home/jstewart/papers/gi01.pdf)
+4. \[4\] GPUOpen. *DGF: A Dense, Hardware-Friendly Geometry Format for Lossily Compressing Meshlets with Arbitrary Topologies*. Retrieved from [https://gpuopen.com/download/publications/DGF.pdf](https://gpuopen.com/download/publications/DGF.pdf)
+5. \[5\] Zeux. *MeshOptimizer*. Retrieved from [https://github.com/zeux/meshoptimizer](https://github.com/zeux/meshoptimizer)
+6. \[6\] Turbulenz. *NvTriStrip*. Retrieved from [https://github.com/turbulenz/NvTriStrip](https://github.com/turbulenz/NvTriStrip)
+7. \[7\] GPSnoopy. *TriStripper*. Retrieved from [https://github.com/GPSnoopy/TriStripper](https://github.com/GPSnoopy/TriStripper)
+8. \[8\] Vanecek, P. (2002). *Comparison of Stripification Techniques*. Retrieved from [https://old.cescg.org/CESCG-2002/PVanecek/paper.pdf](https://old.cescg.org/CESCG-2002/PVanecek/paper.pdf)
+9. \[9\] Vanecek, P. (2008). *Comparison of Triangle Strips Algorithms*. Retrieved from [https://www.researchgate.net/publication/234802608_Comparison_of_triangle_strips_algorithms](https://www.researchgate.net/publication/234802608_Comparison_of_triangle_strips_algorithms)
+10. \[10\]. Stanford Bunny model. Retrieved from https://graphics.stanford.edu/data/3Dscanrep/
+
