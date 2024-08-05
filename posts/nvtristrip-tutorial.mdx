@@ -300,43 +300,160 @@ Experiment with different cache sizes to discover the sweet spot that best balan
 
 ### Code examples
 
-```cpp 
+```cpp title="main.cpp"
 #include <vector>
+#include <iostream>
+#include <string>
+#include <memory>
 #include "NvTriStrip.h"
 
-int main() {
-    // Setup
-    NVTRISTRIP::PrimitiveGroup* primitiveGroups = nullptr;
-    unsigned int numGroups = 0;
-    
-    // Create a list of indices
-    std::vector<unsigned int> indices = { /* your indices here */ };
 
-    // Configure stripification constraints
-    NVTRISTRIP::SetCacheSize(16); // Example cache size
-    NVTRISTRIP::SetListsOnly(false);
-    NVTRISTRIP::SetStitchStrips(false);
-    NVTRISTRIP::SetMinStripSize(0);
+std::string triangleToString(const std::vector<unsigned int>& triangle) {
+            std::string result = "[" + std::to_string(triangle[0]) + "," + std::to_string(triangle[1]) + "," + std::to_string(triangle[2]) + "]";
+            return result;
+}
 
-    // Generate strips
-    NVTRISTRIP::GenerateStrips(indices.data(), indices.size(), &primitiveGroups, &numGroups);
-
-    // Output results
-    for (unsigned int i = 0; i < numGroups; ++i) {
-        NVTRISTRIP::PrimitiveGroup& group = primitiveGroups[i];
-        std::cout << "Strip " << i << ": ";
-        for (unsigned int j = 0; j < group.numIndices; ++j) {
-            std::cout << group.indices[j] << " ";
-        }
-        std::cout << std::endl;
+std::string trianglesToString(const std::vector<std::vector<unsigned int>>& triangles) {
+    std::string result = "[";
+    for (const auto& triangle : triangles) {
+        result += triangleToString(triangle) + ",";
     }
+    result.pop_back(); // Remove the last comma
+    result += "]";
+    return result;
+}
+
+std::vector<Coordinate> readVerticesFromObj(const std::string& filename) {
+    std::vector<Coordinate> vertices;
+    std::ifstream file(filename);
+    if (!file.is_open()) {
+        std::cerr << "Failed to open file: " << filename << std::endl;
+        return vertices;
+    }
+
+    std::string line;
+    while (std::getline(file, line)) {
+        if (line.substr(0, 2) == "v ") {
+            std::istringstream iss(line.substr(2));
+            Coordinate vertex;
+            iss >> vertex.x >> vertex.y >> vertex.z;
+            vertices.push_back(vertex);
+        }
+    }
+
+    file.close();
+    return vertices;
+}
+
+std::vector<std::vector<unsigned int>> readTrianglesFromObj(const std::string& filename) {
+    std::vector<std::vector<unsigned int>> triangles;
+    std::ifstream file(filename);
+    if (!file.is_open()) {
+        std::cerr << "Failed to open file: " << filename << std::endl;
+        return triangles;
+    }
+
+    std::string line;
+    while (std::getline(file, line)) {
+        if (line.substr(0, 2) == "f ") {
+            std::istringstream iss(line.substr(2));
+            std::vector<unsigned int> triangle;
+            std::string vertexStr;
+            while (iss >> vertexStr) {
+                std::istringstream vertexStream(vertexStr);
+                std::string indexStr;
+                unsigned int vertexIndex;
+                std::getline(vertexStream, indexStr, '/'); // read the vertex index
+                vertexIndex = std::stoi(indexStr) - 1; // OBJ format uses 1-based indices
+                triangle.push_back(vertexIndex);
+            }
+            if (triangle.size() == 3) {
+                triangles.push_back(triangle);
+            } else {
+                std::cerr << "Invalid face format in line: " << line << std::endl;
+            }
+        }
+    }
+
+    file.close();
+    return triangles;
+}
+
+int main() {
+    
+    const std::string& path = "D:/vcdev/users/hoangng/playground/bunny.obj";
+    auto verticesCoords = readVerticesFromObj(path);
+    auto triangleList = readTrianglesFromObj(path);
+
+    std::vector<int> cacheSizes = {8, 256};
+
+    std::vector<uint32_t> indices;
+
+    for(auto tria : triangleList) {
+        indices.push_back(tria[0]);
+        indices.push_back(tria[1]);
+        indices.push_back(tria[2]);
+    }
+
+    std::vector<std::vector<unsigned int>> triangle_list;
+
+    for(auto size: cacheSizes) {
+
+        NVTRISTRIP::PrimitiveGroup* primitiveGroups = nullptr;
+        unsigned int numGroups = 0;
+
+        // Stripify
+        NVTRISTRIP::SetCacheSize(size);
+        NVTRISTRIP::SetListsOnly(false);
+        NVTRISTRIP::SetStitchStrips(false);
+
+        NVTRISTRIP::GenerateStrips(indices.data(), indices.size(), &primitiveGroups, &numGroups);
+        std::vector<StripNodes> stripNodeList;
+        triangle_list.clear();
+
+        // Print out rearranged triangle strips
+        for (unsigned int i = 0; i < numGroups; i++) {
+            NVTRISTRIP::PrimitiveGroup& group = primitiveGroups[i];
+            std::cout << "Strip " << i << ": " << std::endl;
+            for (unsigned int j = 0; j < group.numIndices; j++) {
+                std::cout << group.indices[j] << " ";
+                if(j < group.numIndices - 2) {
+                    std::vector<unsigned int> triangle = {group.indices[j], group.indices[j+1], group.indices[j+2] };
+                    triangle_list.push_back(triangle);
+                }
+            }
+            auto lists = EncodeStrip(group.indices, group.numIndices, verticesCoords);
+            stripNodeList.push_back(lists);
+            std::cout << std::endl;
+        } 
+
+        // Sort list and merge
+        auto stripNodeSorted = sortStrip(stripNodeList);
+        auto mergeIndicies = mergeStrip(stripNodeSorted);
+
+        auto triangles = getListTriangle(2, mergeIndicies.size(), mergeIndicies);
+        std::string trianglesStr = trianglesToString(triangles);
+        
+
+        // -------------------------------------------- Write triangles to file (for testing) --------------------------------------------
+        std::string path_vertex_list = "src/output/bunny_wcache_size_" + std::to_string(size) + ".txt";
+        std::ofstream outputFile(path_vertex_list);
+        if (outputFile.is_open()) {
+            outputFile << trianglesStr;
+            outputFile.close();
+        } else {
+            std::cout << "Failed to open file for writing." << std::endl;
+        }
+
+        // Cleanup
+        delete[] primitiveGroups;
+    };
 
     return 0;
 }
-
 ```
 
-```bash
+```bash title="CMakeLists.txt"
 cmake_minimum_required(VERSION 3.21)
 project(MyProject)
 
